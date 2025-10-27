@@ -12,6 +12,8 @@ unsigned short symadd[500], macword, dr, sr, sr1, sr2, baser, trapvec, eopcode;
 char outfilename[100], linesave[100], buf[100], *symbol[500], *p1, *p2, *cp, *mnemonic, *o1, *o2, *o3, *label;
 int stsize, linenum, rc, loc_ctr, num;
 time_t timer;
+// Leaving the file name as null temproarily. When the main method runs, this var will be assigned, and the error function can print the name of the function, same as the LCC
+char *fileName = NULL;
 
 // Case insensitive string compare
 // Returns 0 if two strings are equal.
@@ -51,6 +53,7 @@ void error(char *p)
 {
    // Code missing here:
    // Displays error message p points to, line number in linenum, and line in linesave.
+   printf("Error on line %d of %s:\n%s\n%s\n",linenum,fileName,linesave,p);
 }
 int isreg(char *p)
 {
@@ -78,6 +81,9 @@ int main(int argc,char *argv[])  // Main Method
       printf("Usage: a1 <input filename>\n");
       exit(1);
    }
+
+   // This assigns gets the name of the file passed in and saves it as a global var, so the error function can display it same as the LCC
+   fileName = argv[1];
 
    // display your name, command line args, time
    time(&timer);      // get time
