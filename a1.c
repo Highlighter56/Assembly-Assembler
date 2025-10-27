@@ -54,6 +54,7 @@ void error(char *p)
    // Displays error message p points to, line number in linenum, and line in linesave.
    // Error message format is the same as the LCC
    printf("Error on line %d of %s:\n%s\n%s\n",linenum,fileName,linesave,p);
+   exit(0); // On error, exit program
 }
 int isreg(char *p)
 {
@@ -76,8 +77,19 @@ int isreg(char *p)
 }
 unsigned short getreg(char *p)              
 {
-   // Code missing here:
    // Returns register number of the register whose name p points to. Calls error() if not passed a register name.
+   if(isreg(p)) {                      // If p is a valid register
+      if(p[0]=='r'){                   // Checks for r0-7
+         return p[1]-48; // converts the character number into a number
+      } else if(strcmp(p,"fp")==0) {   // Checks for fp
+         return 5;
+      } else if(strcmp(p,"sp")==0) {   // Check for sp
+         return 6;
+      } else if(strcmp(p,"lr")==0) {   // Check for lr
+         return 7;
+      }
+   }
+   error("Bad register");  // If not a register, call error
 }
 unsigned short getadd(char *p)
 {
