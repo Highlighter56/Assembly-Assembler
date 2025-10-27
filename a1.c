@@ -172,8 +172,14 @@ int main(int argc,char *argv[])  // Main Method
       strcpy(linesave, buf);        // save line for error messages - take buf, and copy the string into linesave - buff and line save are both char[100]
       if (!isspace(buf[0]))         // line starts with label - if the first character in a line isnt a space, meanign theres a letter, meaning its a label
       { // basicly if its a label break up the line into three parts, the label the opcode and the rest of the string. If its not a label, break it up into two parts, the opcode and the rest of the line
-         label = strdup(strtok(buf, " \r\n\t:"));  // strtok is getting breaking up a string, based on the entered string - so this is breaking up buf, by searching for the first occurence of  \r\n\t:
-         // Code Missing Here Add code here that checks for a duplicate label, use strcmp().
+         label = strdup(strtok(buf, " \r\n\t:"));  // get the label - strtok breaks a string based on the entered string - so this is breaking up buf, by searching for the first occurence of  \r\n\t:
+         // Check for duplicate labels
+         int i=0;
+         while(symbol[i]!=0) {                  // loop the symbol table until you reach the end of inputed symbols. (The null value for a char pointer is 0)
+            if(strcmp(symbol[i],label)==0)      // If theres a match
+               error("Duplicate label");        // There is a duplicate label, and call error
+            i++;                                // Incriment i
+         }
          symbol[stsize] = label;          // stsize is a bad name, but its an int that keeps in index inside of symbol and symadd, to make sure were alwasu at the same place
          symadd[stsize++] = loc_ctr;      // adding the label and its adress to symbol and symadd
          mnemonic = strtok(NULL," \r\n\t:"); // get ptr to mnemonic/directive - if on subsequent calls you done enter a string and instead enter null as the string to tokenize, strtok will remember the last string you called on, and contiue to tokenize from where it last left off
