@@ -336,5 +336,7 @@ int main(int argc,char *argv[])  // Main Method
          error("Invalid mnemonic or directive");
    }
    // Close files.
+   fclose(infile);
+   fclose(outfile);
 }
 
