@@ -93,8 +93,16 @@ unsigned short getreg(char *p)
 }
 unsigned short getadd(char *p)
 {
-   // Code missing here:
    // Returns address of symbol p points to accessed from the symbol table. Calls error() if symbol not in symbol table.
+   int i=0;                         // Note: Could this break if a label was '0'
+   while(symbol[i]!=0) {                  // loop the symbol table until you reach the end of inputed symbols. (The null value for a char pointer is 0)
+      if(strcmp(symbol[i],p)==0) {        // If theres a match
+         return symadd[i];                // Returning the adress of the symbol p
+      }
+      i++;                                // Incriment i
+   }
+   error("Symbol not in symbol tabel");   // If there is no match, call error
+   // Maybe change this error to 'Symbol does not exist'
 }
 
 
@@ -156,7 +164,7 @@ int main(int argc,char *argv[])  // Main Method
    while (fgets(buf, sizeof(buf), infile))
    {
       linenum++;  // update line number
-      cp = buf;                              // cp is a char pointer, buf is a char array, your now making cp a string essentialy
+      cp = buf;                              // cp is a char pointer, buf is a char array, your now making cp a string essentialy, with each character in a different index
       while (isspace(*cp))
          cp++;
       if (*cp == '\0' || *cp ==';')  // if line all blank, or at line end, go to next line
