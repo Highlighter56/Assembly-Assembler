@@ -51,14 +51,28 @@ short int mystrncmpi(const char *p, const char *q, int n)   // Same as mystrcmpi
 
 void error(char *p)
 {
-   // Code missing here:
    // Displays error message p points to, line number in linenum, and line in linesave.
+   // Error message format is the same as the LCC
    printf("Error on line %d of %s:\n%s\n%s\n",linenum,fileName,linesave,p);
 }
 int isreg(char *p)
 {
-   // Code missing here:
-   // Returns 1 if p points to a register name. Otherwise, returns 0.   
+   // Returns 1 if p points to a register name. Otherwise, returns 0.  
+   if(strlen(p)==2) {               // checks if length of p is 2
+      if(p[0]=='r') {               // Checks for r0-7
+         int num = p[1]-48;
+         if(num>=0 && num<=7) {
+            return 1;
+         }
+      } else if(strcmp(p,"fp")==0) {   // Checks for fp
+         return 1;
+      } else if(strcmp(p,"sp")==0) {   // Check for sp
+         return 1;
+      } else if(strcmp(p,"lr")==0) {   // Check for lr
+         return 1;
+      }
+   }
+   return 0;
 }
 unsigned short getreg(char *p)              
 {
