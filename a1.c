@@ -9,8 +9,7 @@
 FILE *infile, *outfile;
 short pcoffset9, pcoffset11, imm5, imm9, offset6;
 unsigned short symadd[500], macword, dr, sr, sr1, sr2, baser, trapvec, eopcode;
-char outfilename[100], linesave[100], buf[100], *symbol[500], *p1, *p2, *cp,
-     *mnemonic, *o1, *o2, *o3, *label;
+char outfilename[100], linesave[100], buf[100], *symbol[500], *p1, *p2, *cp, *mnemonic, *o1, *o2, *o3, *label;
 int stsize, linenum, rc, loc_ctr, num;
 time_t timer;
 
@@ -21,24 +20,26 @@ short int mystrcmpi(const char *p, const char *q)
    char a, b;
    while (1) 
    {
-      a = tolower(*p); b = tolower(*q);
-      if (a != b) return a-b;
-      if (a == '\0') return 0;
-      p++; q++;
+      a = tolower(*p);           // dereference the pointer, and just grab the first character
+      b = tolower(*q);
+      if (a != b) return a-b;    // if the letters your currently at are not the same, return that their not the same
+      if (a == '\0') return 0;   // meaing both would have to be at the end of the array because you already checked if the symbols were different
+      p++; q++;                  // incriment to the next character
    }
-   return 0;
+   return 0;                     // this will never be reached, so why is it here?
 }
 
 // Case insensitive string compare
 // Compares up to a maximum of n characters from each string.
 // Returns 0 if characters compared are equal.
-short int mystrncmpi(const char *p, const char *q, int n) 
+short int mystrncmpi(const char *p, const char *q, int n)   // Same as mystrcmpi, but with a limit to how many chars you check
 {
    char a, b;
    int i;
    for (i = 1; i <= n; i++) 
    {
-      a = tolower(*p); b = tolower(*q);
+      a = tolower(*p); 
+      b = tolower(*q);
       if (a != b) return a-b;
       if (a == '\0') return 0;
       p++; q++;
@@ -49,30 +50,29 @@ short int mystrncmpi(const char *p, const char *q, int n)
 void error(char *p)
 {
    // Code missing here:
-   // Displays error message p points to, line number in linenum, and line in
-   // linesave.
+   // Displays error message p points to, line number in linenum, and line in linesave.
 }
 int isreg(char *p)
 {
    // Code missing here:
-   // Returns 1 if p points to a register name.
-   // Otherwise, returns 0.   
+   // Returns 1 if p points to a register name. Otherwise, returns 0.   
 }
 unsigned short getreg(char *p)              
 {
    // Code missing here:
-   // Returns register number of the register whose name p points to.
-   // Calls error() if not passed a register name.
+   // Returns register number of the register whose name p points to. Calls error() if not passed a register name.
 }
 unsigned short getadd(char *p)
 {
    // Code missing here:
-   // Returns address of symbol p points to accessed from the symbol table.
-   // Calls error() if symbol not in symbol table.
+   // Returns address of symbol p points to accessed from the symbol table. Calls error() if symbol not in symbol table.
 }
-int main(int argc,char *argv[])
+
+
+
+int main(int argc,char *argv[])  // Main Method
 {
-   if (argc != 2)
+   if (argc != 2)                // Checking num of arguments passed in when program is run
    {
       printf("Wrong number of command line arguments\n");
       printf("Usage: a1 <input filename>\n");
@@ -120,34 +120,34 @@ int main(int argc,char *argv[])
    fwrite("oC", 2, 1, outfile); // output empty header
 
    // Pass 1
-   printf("Starting Pass 1\n");
+   printf("Starting Pass 1\n");              // OMG OMG THIS IS WHAT THE LCC MEANS WHEN IT PRINTS Starting Pass 1
    while (fgets(buf, sizeof(buf), infile))
    {
       linenum++;  // update line number
-      cp = buf;
+      cp = buf;                              // cp is a char pointer, buf is a char array, your now making cp a string essentialy
       while (isspace(*cp))
          cp++;
-      if (*cp == '\0' || *cp ==';')  // if line all blank, go to next line
-         continue;
-      strcpy(linesave, buf);        // save line for error messages
-      if (!isspace(buf[0]))         // line starts with label
-      {
-         label = strdup(strtok(buf, " \r\n\t:"));
-         // Add code here that checks for a duplicate label, use strcmp().
-         symbol[stsize] = label;
-         symadd[stsize++] = loc_ctr;
-         mnemonic = strtok(NULL," \r\n\t:"); // get ptr to mnemonic/directive
+      if (*cp == '\0' || *cp ==';')  // if line all blank, or at line end, go to next line
+         continue;   // go to next loop of while loop
+      strcpy(linesave, buf);        // save line for error messages - take buf, and copy the string into linesave - buff and line save are both char[100]
+      if (!isspace(buf[0]))         // line starts with label - if the first character in a line isnt a space, meanign theres a letter, meaning its a label
+      { // basicly if its a label break up the line into three parts, the label the opcode and the rest of the string. If its not a label, break it up into two parts, the opcode and the rest of the line
+         label = strdup(strtok(buf, " \r\n\t:"));  // strtok is getting breaking up a string, based on the entered string - so this is breaking up buf, by searching for the first occurence of  \r\n\t:
+         // Code Missing Here Add code here that checks for a duplicate label, use strcmp().
+         symbol[stsize] = label;          // stsize is a bad name, but its an int that keeps in index inside of symbol and symadd, to make sure were alwasu at the same place
+         symadd[stsize++] = loc_ctr;      // adding the label and its adress to symbol and symadd
+         mnemonic = strtok(NULL," \r\n\t:"); // get ptr to mnemonic/directive - if on subsequent calls you done enter a string and instead enter null as the string to tokenize, strtok will remember the last string you called on, and contiue to tokenize from where it last left off
          o1 = strtok(NULL, " \r\n\t,");      // get ptr to first operand
       }
-      else   // tokenize line with no label
+      else   // if the line does not start with a label - tokenize line with no label
       {
          mnemonic = strtok(buf, " \r\n\t");  // get ptr to mnemonic
          o1 = strtok(NULL, " \r\n\t,");      // get ptr to first operand
       }
-      if (mnemonic == NULL)    // check for mnemonic or directive
+      if (mnemonic == NULL)    // check for mnemonic or directive - i think this accounts for whitespace?
          continue;
-      if (!mystrcmpi(mnemonic, ".zero"))    // case insensitive compare
-      {
+      if (!mystrcmpi(mnemonic, ".zero"))    // case insensitive compare - if the line/opcode/mnumonic is .zero
+      {  // If we find a .zero, add the nessecary lines of blank space
          if (o1)
             rc = sscanf(o1, "%d", &num);    // get size of block from o1
          else
@@ -156,8 +156,8 @@ int main(int argc,char *argv[])
             error("Invalid operand");
          loc_ctr = loc_ctr + num;
       }
-      else
-         loc_ctr++;
+      else 
+         loc_ctr++; // if the line is anything other than .zero, than incriment normaly
       if (loc_ctr > 65536)
          error("Program too big");
    }
@@ -165,8 +165,8 @@ int main(int argc,char *argv[])
    rewind(infile);
 
    // Pass 2
-   printf("Starting Pass 2\n");
-   loc_ctr = linenum = 0;      // reinitialize
+   printf("Starting Pass 2\n");           // so this is pass two, now its makign sense
+   loc_ctr = linenum = 0;      // reinitialize - after going through all of the code, the first time collecting all of the labels, go back to the top and start pass 2
    while (fgets(buf, sizeof(buf), infile))
    {
       linenum++;
