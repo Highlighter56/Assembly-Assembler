@@ -54,7 +54,7 @@ void error(char *p)
    // Displays error message p points to, line number in linenum, and line in linesave.
    // Error message format is the same as the LCC
    printf("Error on line %d of %s:\n%s\n%s\n",linenum,fileName,linesave,p);
-   exit(0); // On error, exit program
+   exit(1); // On error, exit program
 }
 int isreg(char *p)
 {
@@ -160,35 +160,31 @@ int main(int argc,char *argv[])  // Main Method
    fwrite("oC", 2, 1, outfile); // output empty header
 
    // Pass 1
-   printf("Starting Pass 1\n");              // OMG OMG THIS IS WHAT THE LCC MEANS WHEN IT PRINTS Starting Pass 1
-   while (fgets(buf, sizeof(buf), infile))
-   {
-      linenum++;  // update line number
-      cp = buf;                              // cp is a char pointer, buf is a char array, your now making cp a string essentialy, with each character in a different index
-      while (isspace(*cp))
+   printf("Starting Pass 1\n");                    // OMG OMG THIS IS WHAT THE LCC MEANS WHEN IT PRINTS Starting Pass 1
+   while (fgets(buf, sizeof(buf), infile)) {
+      linenum++;                                   // incriment line number
+      cp = buf;                                    // cp is becomes an array, with each character of a single line of code in a different index
+      while (isspace(*cp))                         // itterates past the white space
          cp++;
-      if (*cp == '\0' || *cp ==';')  // if line all blank, or at line end, go to next line
-         continue;   // go to next loop of while loop
-      strcpy(linesave, buf);        // save line for error messages - take buf, and copy the string into linesave - buff and line save are both char[100]
-      if (!isspace(buf[0]))         // line starts with label - if the first character in a line isnt a space, meanign theres a letter, meaning its a label
-      { // basicly if its a label break up the line into three parts, the label the opcode and the rest of the string. If its not a label, break it up into two parts, the opcode and the rest of the line
+      if (*cp == '\0' || *cp ==';')                // if line is blank OR commented, go to next line
+         continue;                                 // go to next pass - next loop of while loop
+      strcpy(linesave, buf);                       // save buf in linesave
+      if (!isspace(buf[0])) {                // If line has label: Break it up into 3 parts
          label = strdup(strtok(buf, " \r\n\t:"));  // get the label - strtok breaks a string based on the entered string - so this is breaking up buf, by searching for the first occurence of  \r\n\t:
          // Check for duplicate labels
          int i=0;
-         while(symbol[i]!=0) {                  // loop the symbol table until you reach the end of inputed symbols. (The null value for a char pointer is 0)
-            if(strcmp(symbol[i],label)==0)      // If theres a match
-               error("Duplicate label");        // There is a duplicate label, and call error
-            i++;                                // Incriment i
+         while(symbol[i]!=0) {                     // loop the symbol table until you reach the end of inputed symbols. (The null value for a char pointer is 0)
+            if(strcmp(symbol[i],label)==0)         // If theres a match
+               error("Duplicate label");           // There is a duplicate label, and call error
+            i++;                                   // Incriment i
          }
-         symbol[stsize] = label;          // stsize is a bad name, but its an int that keeps in index inside of symbol and symadd, to make sure were alwasu at the same place
-         symadd[stsize++] = loc_ctr;      // adding the label and its adress to symbol and symadd
-         mnemonic = strtok(NULL," \r\n\t:"); // get ptr to mnemonic/directive - if on subsequent calls you done enter a string and instead enter null as the string to tokenize, strtok will remember the last string you called on, and contiue to tokenize from where it last left off
-         o1 = strtok(NULL, " \r\n\t,");      // get ptr to first operand
-      }
-      else   // if the line does not start with a label - tokenize line with no label
-      {
-         mnemonic = strtok(buf, " \r\n\t");  // get ptr to mnemonic
-         o1 = strtok(NULL, " \r\n\t,");      // get ptr to first operand
+         symbol[stsize] = label;                   // stsize is a bad name, but its an int that keeps in index inside of symbol and symadd, to make sure were alwasu at the same place
+         symadd[stsize++] = loc_ctr;               // adding the label and its adress to symbol and symadd
+         mnemonic = strtok(NULL," \r\n\t:");       // get ptr to mnemonic/directive - if on subsequent calls you done enter a string and instead enter null as the string to tokenize, strtok will remember the last string you called on, and contiue to tokenize from where it last left off
+         o1 = strtok(NULL, " \r\n\t,");            // get ptr to first operand
+      } else {                               // If the line does not start with a label
+         mnemonic = strtok(buf, " \r\n\t");        // opcode of current line   - get ptr to mnemonic
+         o1 = strtok(NULL, " \r\n\t,");            // rest of the line of code - get ptr to first operand
       }
       if (mnemonic == NULL)    // check for mnemonic or directive - i think this accounts for whitespace?
          continue;
@@ -201,8 +197,7 @@ int main(int argc,char *argv[])  // Main Method
          if (rc != 1 || num > (65536 - loc_ctr) || num < 1)
             error("Invalid operand");
          loc_ctr = loc_ctr + num;
-      }
-      else 
+      } else 
          loc_ctr++; // if the line is anything other than .zero, than incriment normaly
       if (loc_ctr > 65536)
          error("Program too big");
@@ -211,20 +206,35 @@ int main(int argc,char *argv[])  // Main Method
    rewind(infile);
 
    // Pass 2
-   printf("Starting Pass 2\n");           // so this is pass two, now its makign sense
-   loc_ctr = linenum = 0;      // reinitialize - after going through all of the code, the first time collecting all of the labels, go back to the top and start pass 2
-   while (fgets(buf, sizeof(buf), infile))
-   {
-      linenum++;
-      // Code missing here:
-      // Discard blank/comment lines, and save buf in linesave as in pass 1
-      // Tokenize entire current line.
-      // Do not make any new entries into the symbol table
+   printf("Starting Pass 2\n");                    // starting pass 2
+   loc_ctr = linenum = 0;                          // reinitialize - after pass 1, reset to start pass 2
+   while (fgets(buf, sizeof(buf), infile)) {
+		linenum++;                                   // incriment line number
+		cp = buf;                                    // cp is becomes an array, with each character of a single line of code in a different index
+		while (isspace(*cp))                         // itterates past the white space
+			cp++;
+		if (*cp == '\0' || *cp ==';')                // if line is blank OR commented, go to next line
+			continue;                                // go to next pass - next loop of while loop
+		strcpy(linesave, buf);                       // save buf in linesave
+		// Tokenize entire current line
+		if (!isspace(buf[0])) {                // If line has label: Break it up into 3 parts
+			label = strdup(strtok(buf, " \r\n\t:"));  // get the label - strtok breaks a string based on the entered string - so this is breaking up buf, by searching for the first occurence of  \r\n\t:
+			mnemonic = strtok(NULL," \r\n\t:");       // get opcode/mnemonic - if on subsequent calls you done enter a string and instead enter null as the string to tokenize, strtok will remember the last string you called on, and contiue to tokenize from where it last left off
+			o1 = strtok(NULL, " \r\n\t,");            // get next part
+			o2 = strtok(NULL, " \r\n\t,");            // get next part
+         o3 = strtok(NULL, " \r\n\t,");            // get next part
+			// printf("%s:\t%s\t%s\t%s\t%s\n",label,mnemonic,o1,o2,o3); // Debugging
+		} else {                               // If the line does not start with a label
+			mnemonic = strtok(buf, " \r\n\t");        // opcode of current line   - get ptr to mnemonic
+			o1 = strtok(NULL, " \r\n\t,");            // get next part
+			o2 = strtok(NULL, " \r\n\t,");            // get next part
+         o3 = strtok(NULL, " \r\n\t,");            // get next part
+			// printf("\t%s\t%s\t%s\t%s\n", mnemonic, o1, o2, o3);      // Debugging
+		}
 
       if (mnemonic == NULL)
          continue;
-      if (!mystrncmpi(mnemonic, "br", 2))    // case sensitive compares
-      {
+      if (!mystrncmpi(mnemonic, "br", 2)) {        // case sensitive compares - if br
          if (!mystrcmpi(mnemonic, "br" ))
             macword = 0x0e00;
          else
@@ -255,67 +265,51 @@ int main(int argc,char *argv[])  // Main Method
          if (pcoffset9 > 255 || pcoffset9 < -256)
             error("pcoffset9 out of range");
          macword = macword | (pcoffset9 & 0x01ff);  // assemble inst
-         fwrite(&macword, 2, 1, outfile);           // write out instruction
+         fwrite(&macword, 2, 1, outfile);           // write instruction
          loc_ctr++;
-      }
-      else
-      if (!mystrcmpi(mnemonic, "add" ))
-      {
+      } else if (!mystrcmpi(mnemonic, "add" )) {
          if (!o3)
             error("Missing operand");
-         dr = getreg(o1) << 9;   // get and position dest reg number
-         sr1 = getreg(o2) << 6;  // get and position srce reg number
-         if (isreg(o3)) // is 3rd operand a reg?
-         {
-            sr2 = getreg(o3);      // get third reg number
-            macword = 0x1000 | dr | sr1 | sr2; // assemble inst
-         }
-         else
-         {
-            if (sscanf(o3,"%d", &num) != 1)    // convert imm5 field
+         dr = getreg(o1) << 9;                     // get and position dest reg number
+         sr1 = getreg(o2) << 6;                    // get and position srce reg number
+         if (isreg(o3)) {                          // is 3rd operand a reg?
+            sr2 = getreg(o3);                      // get third reg number
+            macword = 0x1000 | dr | sr1 | sr2;     // assemble inst
+         } else {
+            if (sscanf(o3,"%d", &num) != 1)        // convert imm5 field
                error("Bad imm5");
             if (num > 15 || num < -16)
                error("imm5 out of range");
             macword = 0x1000 | dr | sr1 | 0x0020 | (num & 0x1f);
          }
-         fwrite(&macword, 2, 1, outfile);      // write out instruction
+         fwrite(&macword, 2, 1, outfile);          // write out instruction
          loc_ctr++;
-      }
-      else
-      if (!mystrcmpi(mnemonic, "ld" ))
-      {
-         dr = getreg(o1) << 9;// get and position destination reg number
+      } else if (!mystrcmpi(mnemonic, "ld" )) {
+         dr = getreg(o1) << 9;                     // get and position destination reg number
          pcoffset9 = (getadd(o2) - loc_ctr - 1);
          if (pcoffset9 > 255 || pcoffset9 < -256)
             error("pcoffset9 out of range");
-         macword = 0x2000 | dr | (pcoffset9 & 0x1ff);   // assemble inst
-         fwrite(&macword, 2, 1, outfile); // write out instruction
+         macword = 0x2000 | dr | (pcoffset9 & 0x1ff);// assemble inst
+         fwrite(&macword, 2, 1, outfile);          // write out instruction
          loc_ctr++;
       }
 
       // code missing here for st, bl, blr, and, ldr, str, not
 
-      else
-      if (!mystrcmpi(mnemonic, "jmp" ))     // also ret instruction
-      {
-         baser = getreg(o1) << 6;        // get reg number and position it
-         if (o2)                         // offset6 specified?
-         {
-            if (sscanf(o2,"%d", &num) != 1)    // convert offset6 field
+      else if (!mystrcmpi(mnemonic, "jmp" )) {     // also ret instruction
+         baser = getreg(o1) << 6;                  // get reg number and position it
+         if (o2) {                                 // offset6 specified?
+            if (sscanf(o2,"%d", &num) != 1)        // convert offset6 field
                error("Bad offset6");
             if (num > 31 || num < -32)
                error("offset6 out of range");
-         }
-         else
-            num = 0;                           // offset6 defaults to 0
+         } else
+            num = 0;                               // offset6 defaults to 0
          // combine opcode, reg number, and offset6
          macword = 0xc000 | baser | num;       
-         fwrite(&macword, 2, 1, outfile);  // write out instruction
+         fwrite(&macword, 2, 1, outfile);          // write out instruction
          loc_ctr++;
-      }
-      else
-      if (!mystrcmpi(mnemonic, "ret" ))     // also ret instruction
-      {
+      } else if (!mystrcmpi(mnemonic, "ret" )) {   // also ret instruction
          // code here is similar to code for jmp except baser
          // is always 7 and optional offset6 is pointed to by
          // o1, not by o2 as in jmp
@@ -323,16 +317,13 @@ int main(int argc,char *argv[])  // Main Method
 
       // code missing here for lea, trap (halt, nl, dout), .word
 
-      else
-      if (!mystrcmpi(mnemonic, ".zero"))
-      {
-         sscanf(o1, "%d", &num);             // get size of block
-         loc_ctr = loc_ctr + num;            // adjust loc_ctr
+      else if (!mystrcmpi(mnemonic, ".zero")) {
+         sscanf(o1, "%d", &num);                   // get size of block
+         loc_ctr = loc_ctr + num;                  // adjust loc_ctr
          macword = 0;
-         while (num--)                       // write out a block of zeros
+         while (num--)                             // write out a block of zeros
             fwrite(&macword, 2, 1, outfile);
-      }
-      else
+      } else
          error("Invalid mnemonic or directive");
    }
    // Close files.
