@@ -244,7 +244,7 @@ int main(int argc,char *argv[])  // Main Method
 			continue;
 		
 		// --Branching--
-		if (!mystrncmpi(mnemonic, "br", 2)) {        // case sensitive compares - if br
+		if (!mystrncmpi(mnemonic, "br", 2)) {        		// case sensitive compares - if br
 			if (!mystrcmpi(mnemonic, "br" ))
 				macword = 0x0e00;
 			else
@@ -271,38 +271,38 @@ int main(int argc,char *argv[])  // Main Method
 			else
 				error("Invalid branch mnemonic");
 
-			pcoffset9 = (getadd(o1) - loc_ctr - 1);    // compute pcoffset9
+			pcoffset9 = (getadd(o1) - loc_ctr - 1);    		// compute pcoffset9
 			if (pcoffset9 > 255 || pcoffset9 < -256)
 				error("pcoffset9 out of range");
-			macword = macword | (pcoffset9 & 0x01ff);  // assemble inst
-			fwrite(&macword, 2, 1, outfile);           // write instruction
+			macword = macword | (pcoffset9 & 0x01ff);  		// assemble inst
+			fwrite(&macword, 2, 1, outfile);           		// write instruction
 
 		// Add
 		} else if (!mystrcmpi(mnemonic, "add" )) {
 			if (!o3)
 				error("Missing operand");
-			dr = getreg(o1) << 9;                     // get and position dest reg number
-			sr1 = getreg(o2) << 6;                    // get and position srce reg number
-			if (isreg(o3)) {                          // is 3rd operand a reg?
-				sr2 = getreg(o3);                      // get third reg number
-				macword = 0x1000 | dr | sr1 | sr2;     // assemble inst
+			dr = getreg(o1) << 9;                     		// get and position dest reg number
+			sr1 = getreg(o2) << 6;                    		// get and position srce reg number
+			if (isreg(o3)) {                          		// is 3rd operand a reg?
+				sr2 = getreg(o3);                      		// get third reg number
+				macword = 0x1000 | dr | sr1 | sr2;     		// assemble inst
 			} else {
-				if (sscanf(o3,"%d", &num) != 1)        // convert imm5 field
+				if (sscanf(o3,"%d", &num) != 1)        		// convert imm5 field
 					error("Bad imm5");
 				if (num > 15 || num < -16)
 					error("imm5 out of range");
 				macword = 0x1000 | dr | sr1 | 0x0020 | (num & 0x1f);
 			}
-			fwrite(&macword, 2, 1, outfile);          // write out instruction
+			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 
 		// ld
 		} else if (!mystrcmpi(mnemonic, "ld" )) {
-			dr = getreg(o1) << 9;                     	// get and position destination reg number
-			pcoffset9 = (getadd(o2) - loc_ctr - 1);		// **Calculates the pcoffset9**
-			if (pcoffset9 > 255 || pcoffset9 < -256)	// Checks if the pcoffset9 is within the valid range
+			dr = getreg(o1) << 9;                     		// get and position destination reg number
+			pcoffset9 = (getadd(o2) - loc_ctr - 1);			// **Calculates the pcoffset9**
+			if (pcoffset9 > 255 || pcoffset9 < -256)		// Checks if the pcoffset9 is within the valid range
 				error("pcoffset9 out of range");
-			macword = 0x2000 | dr | (pcoffset9 & 0x1ff);// assemble inst
-			fwrite(&macword, 2, 1, outfile);          // write out instruction
+			macword = 0x2000 | dr | (pcoffset9 & 0x1ff);	// assemble inst
+			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
 
 		// st
@@ -325,19 +325,19 @@ int main(int argc,char *argv[])  // Main Method
 		else if (!mystrcmpi(mnemonic, "and" )) {
 			if (!o3)
 				error("Missing operand");
-			dr = getreg(o1) << 9;                     // get and position dest reg number
-			sr1 = getreg(o2) << 6;                    // get and position srce reg number
-			if (isreg(o3)) {                          // is 3rd operand a reg?
-				sr2 = getreg(o3);                      // get third reg number
-				macword = 0x5000 | dr | sr1 | sr2;     // assemble inst
+			dr = getreg(o1) << 9;                     		// get and position dest reg number
+			sr1 = getreg(o2) << 6;                    		// get and position srce reg number
+			if (isreg(o3)) {                          		// is 3rd operand a reg?
+				sr2 = getreg(o3);                      		// get third reg number
+				macword = 0x5000 | dr | sr1 | sr2;     		// assemble inst
 			} else {
-				if (sscanf(o3,"%d", &num) != 1)        // convert imm5 field
+				if (sscanf(o3,"%d", &num) != 1)        		// convert imm5 field
 					error("Bad imm5");
 				if (num > 15 || num < -16)
 					error("imm5 out of range");
 				macword = 0x5000 | dr | sr1 | 0x0020 | (num & 0x1f);
 			}
-			fwrite(&macword, 2, 1, outfile);          // write out instruction
+			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
 
 		// ldr
@@ -349,28 +349,33 @@ int main(int argc,char *argv[])  // Main Method
 		else if (!mystrcmpi(mnemonic, "str" )) {
 			// code missing here
 		}
-
+		
 		// not
 		else if (!mystrcmpi(mnemonic, "not" )) {
-			// code missing here
+			if(!isreg(o1) && !isreg(o2)) 					// checks if valid registers
+				error("bad register");
+			dr = getreg(o1) << 9;							// get dr
+			sr1 = getreg(o2) << 6;							// get sr1
+			macword = 0x9000 | dr | sr1;					// assembly macword
+			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
 
 		// jmp
-		else if (!mystrcmpi(mnemonic, "jmp" )) {     // also ret instruction
-			baser = getreg(o1) << 6;                  // get reg number and position it
-			if (o2) {                                 // offset6 specified?
-				if (sscanf(o2,"%d", &num) != 1)        // convert offset6 field
+		else if (!mystrcmpi(mnemonic, "jmp" )) {     		// also ret instruction
+			baser = getreg(o1) << 6;                  		// get reg number and position it
+			if (o2) {                                 		// offset6 specified?
+				if (sscanf(o2,"%d", &num) != 1)        		// convert offset6 field
 					error("Bad offset6");
 				if (num > 31 || num < -32)
 					error("offset6 out of range");
 			} else
-				num = 0;                               // offset6 defaults to 0
+				num = 0;                               		// offset6 defaults to 0
 			// combine opcode, reg number, and offset6
 			macword = 0xc000 | baser | num;       
-			fwrite(&macword, 2, 1, outfile);          // write out instruction
+			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		
 		// ret
-		} else if (!mystrcmpi(mnemonic, "ret" )) {   // also ret instruction
+		} else if (!mystrcmpi(mnemonic, "ret" )) {   		// also ret instruction
 			// code here is similar to code for jmp except baser
 			// is always 7 and optional offset6 is pointed to by
 			// o1, not by o2 as in jmp
@@ -384,13 +389,13 @@ int main(int argc,char *argv[])  // Main Method
 		// --Trap--
 		// halt
 		else if (!mystrcmpi(mnemonic, "halt" )) {
-			macword = 0xf000;							// Assign macword
-			fwrite(&macword, 2, 1, outfile);          	// write out instruction
+			macword = 0xf000;								// Assign macword
+			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
 		// nl
 		else if (!mystrcmpi(mnemonic, "nl" )) {
-			macword = 0xf001;							// Assign macword
-			fwrite(&macword, 2, 1, outfile);          	// write out instruction
+			macword = 0xf001;								// Assign macword
+			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
 		// dout
 		else if (!mystrcmpi(mnemonic, "dout" )) {
@@ -402,10 +407,10 @@ int main(int argc,char *argv[])  // Main Method
 
 		// .word
 		else if (!mystrcmpi(mnemonic, ".word" )) {
-			num = strtol(o1,&end,10);					// converts the string o1 to a decimal nubmer : &end is where the last character read as a number is stored, so it can be used to check if it was actualy a number that was read in. Im not doing this currently, but at some point this could be implemented
+			num = strtol(o1,&end,10);						// converts the string o1 to a decimal nubmer : &end is where the last character read as a number is stored, so it can be used to check if it was actualy a number that was read in. Im not doing this currently, but at some point this could be implemented
 			if (num > 65535 || num < -65536)				// Checks if the pcoffset9 is within the valid range
 				error("pcoffset9 out of range");
-			macword = macword | num;				// assembly macword
+			macword = macword | num;						// assembly macword
 			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
 		// .zero
