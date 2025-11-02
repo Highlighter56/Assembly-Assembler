@@ -14,6 +14,7 @@ int stsize, linenum, rc, loc_ctr, num;
 time_t timer;
 // Leaving the file name as null temproarily. When the main method runs, this var will be assigned, and the error function can print the name of the function, same as the LCC
 char *fileName = NULL;
+char *end;
 
 // Case insensitive string compare
 // Returns 0 if two strings are equal.
@@ -373,24 +374,28 @@ int main(int argc,char *argv[])  // Main Method
 		}
 		// dout
 		else if (!mystrcmpi(mnemonic, "dout" )) {
-			macword = 0xf000;							// Assign macword
-			sr = getreg(o1) << 9;						// get and format sr
-			macword = macword | sr;						// join macword
-			fwrite(&macword, 2, 1, outfile);          	// write out instruction
+			macword = 0xf000;								// Assign macword
+			sr = getreg(o1) << 9;							// get and format sr
+			macword = macword | sr;							// join macword
+			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
 
 		// .word
 		else if (!mystrcmpi(mnemonic, ".word" )) {
-			// code missing here
+			num = num = strtol(o1,&end,10);					// converts the string o1 to a decimal nubmer : &end is where the last character read as a number is stored, so it can be used to check if it was actualy a number that was read in. Im not doing this currently, but at some point this could be implemented
+			if (num > 65535 || num < -65536)				// Checks if the pcoffset9 is within the valid range
+				error("pcoffset9 out of range");
+			macword = macword | num;				// assembly macword
+			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
 		// .zero
 		else if (!mystrcmpi(mnemonic, ".zero")) {
-			sscanf(o1, "%d", &num);                   	// get size of block
-			loc_ctr = loc_ctr + num;                  	// adjust loc_ctr 
+			sscanf(o1, "%d", &num);                   		// get size of block
+			loc_ctr = loc_ctr + num;                  		// adjust loc_ctr 
 			macword = 0;
-			while (num--)                             	// write out a block of zeros
+			while (num--)                             		// write out a block of zeros
 				fwrite(&macword, 2, 1, outfile);
-			loc_ctr--;									// This is to account for loc_ctr++ at the end of the main while loop
+			loc_ctr--;										// This is to account for loc_ctr++ at the end of the main while loop
 		} else
 			error("Invalid mnemonic or directive");
 
