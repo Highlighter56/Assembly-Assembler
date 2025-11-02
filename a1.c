@@ -48,7 +48,8 @@ short int mystrncmpi(const char *p, const char *q, int n)   // Same as mystrcmpi
    }
    return 0;
 }
-
+// Error
+// Takes in an error message and displays it to the console
 void error(char *p)
 {
    // Displays error message p points to, line number in linenum, and line in linesave.
@@ -56,6 +57,7 @@ void error(char *p)
    printf("Error on line %d of %s:\n%s\n%s\n",linenum,fileName,linesave,p);
    exit(1); // On error, exit program
 }
+// checks if a string is a valid register name or not
 int isreg(char *p)
 {
    // Returns 1 if p points to a register name. Otherwise, returns 0.  
@@ -75,6 +77,8 @@ int isreg(char *p)
    }
    return 0;
 }
+// get register number
+// returns the number associated with a register : ex r5 = 5, lr = 7,...
 unsigned short getreg(char *p)              
 {
    // Returns register number of the register whose name p points to. Calls error() if not passed a register name.
@@ -91,6 +95,7 @@ unsigned short getreg(char *p)
    }
    error("Bad register");  // If not a register, call error
 }
+// Gets the adress associated with a symbol, if its in the symbol table
 unsigned short getadd(char *p)
 {
    // Returns address of symbol p points to accessed from the symbol table. Calls error() if symbol not in symbol table.
@@ -101,7 +106,7 @@ unsigned short getadd(char *p)
       }
       i++;                                // Incriment i
    }
-   error("Symbol not in symbol tabel");   // If there is no match, call error
+   error("Symbol '%s' not in symbol tabel", p);   // If there is no match, call error
    // Maybe change this error to 'Symbol does not exist'
 }
 
@@ -222,110 +227,110 @@ int main(int argc,char *argv[])  // Main Method
 			mnemonic = strtok(NULL," \r\n\t:");       // get opcode/mnemonic - if on subsequent calls you done enter a string and instead enter null as the string to tokenize, strtok will remember the last string you called on, and contiue to tokenize from where it last left off
 			o1 = strtok(NULL, " \r\n\t,");            // get next part
 			o2 = strtok(NULL, " \r\n\t,");            // get next part
-         o3 = strtok(NULL, " \r\n\t,");            // get next part
+         	o3 = strtok(NULL, " \r\n\t,");            // get next part
 			// printf("%s:\t%s\t%s\t%s\t%s\n",label,mnemonic,o1,o2,o3); // Debugging
 		} else {                               // If the line does not start with a label
 			mnemonic = strtok(buf, " \r\n\t");        // opcode of current line   - get ptr to mnemonic
 			o1 = strtok(NULL, " \r\n\t,");            // get next part
 			o2 = strtok(NULL, " \r\n\t,");            // get next part
-         o3 = strtok(NULL, " \r\n\t,");            // get next part
+         	o3 = strtok(NULL, " \r\n\t,");            // get next part
 			// printf("\t%s\t%s\t%s\t%s\n", mnemonic, o1, o2, o3);      // Debugging
 		}
 
-      if (mnemonic == NULL)
-         continue;
-      if (!mystrncmpi(mnemonic, "br", 2)) {        // case sensitive compares - if br
-         if (!mystrcmpi(mnemonic, "br" ))
-            macword = 0x0e00;
-         else
-         if (!mystrcmpi(mnemonic, "brz" ))
-            macword = 0x0000;
-         else
-         if (!mystrcmpi(mnemonic, "brnz" ))
-            macword = 0x0200;
-         else
-         if (!mystrcmpi(mnemonic, "brn" ))
-            macword = 0x0400;
-         else
-         if (!mystrcmpi(mnemonic, "brp" ))
-            macword = 0x0600;
-         else
-         if (!mystrcmpi(mnemonic, "brlt" ))
-            macword = 0x0800;
-         else
-         if (!mystrcmpi(mnemonic, "brgt" ))
-            macword = 0x0a00;
-         else
-         if (!mystrcmpi(mnemonic, "brc" ))
-            macword = 0x0c00;
-         else
-            error("Invalid branch mnemonic");
+		if (mnemonic == NULL)
+			continue;
+		if (!mystrncmpi(mnemonic, "br", 2)) {        // case sensitive compares - if br
+			if (!mystrcmpi(mnemonic, "br" ))
+				macword = 0x0e00;
+			else
+			if (!mystrcmpi(mnemonic, "brz" ))
+				macword = 0x0000;
+			else
+			if (!mystrcmpi(mnemonic, "brnz" ))
+				macword = 0x0200;
+			else
+			if (!mystrcmpi(mnemonic, "brn" ))
+				macword = 0x0400;
+			else
+			if (!mystrcmpi(mnemonic, "brp" ))
+				macword = 0x0600;
+			else
+			if (!mystrcmpi(mnemonic, "brlt" ))
+				macword = 0x0800;
+			else
+			if (!mystrcmpi(mnemonic, "brgt" ))
+				macword = 0x0a00;
+			else
+			if (!mystrcmpi(mnemonic, "brc" ))
+				macword = 0x0c00;
+			else
+				error("Invalid branch mnemonic");
 
-         pcoffset9 = (getadd(o1) - loc_ctr - 1);    // compute pcoffset9
-         if (pcoffset9 > 255 || pcoffset9 < -256)
-            error("pcoffset9 out of range");
-         macword = macword | (pcoffset9 & 0x01ff);  // assemble inst
-         fwrite(&macword, 2, 1, outfile);           // write instruction
-         loc_ctr++;
-      } else if (!mystrcmpi(mnemonic, "add" )) {
-         if (!o3)
-            error("Missing operand");
-         dr = getreg(o1) << 9;                     // get and position dest reg number
-         sr1 = getreg(o2) << 6;                    // get and position srce reg number
-         if (isreg(o3)) {                          // is 3rd operand a reg?
-            sr2 = getreg(o3);                      // get third reg number
-            macword = 0x1000 | dr | sr1 | sr2;     // assemble inst
-         } else {
-            if (sscanf(o3,"%d", &num) != 1)        // convert imm5 field
-               error("Bad imm5");
-            if (num > 15 || num < -16)
-               error("imm5 out of range");
-            macword = 0x1000 | dr | sr1 | 0x0020 | (num & 0x1f);
-         }
-         fwrite(&macword, 2, 1, outfile);          // write out instruction
-         loc_ctr++;
-      } else if (!mystrcmpi(mnemonic, "ld" )) {
-         dr = getreg(o1) << 9;                     // get and position destination reg number
-         pcoffset9 = (getadd(o2) - loc_ctr - 1);
-         if (pcoffset9 > 255 || pcoffset9 < -256)
-            error("pcoffset9 out of range");
-         macword = 0x2000 | dr | (pcoffset9 & 0x1ff);// assemble inst
-         fwrite(&macword, 2, 1, outfile);          // write out instruction
-         loc_ctr++;
-      }
+			pcoffset9 = (getadd(o1) - loc_ctr - 1);    // compute pcoffset9
+			if (pcoffset9 > 255 || pcoffset9 < -256)
+				error("pcoffset9 out of range");
+			macword = macword | (pcoffset9 & 0x01ff);  // assemble inst
+			fwrite(&macword, 2, 1, outfile);           // write instruction
+			loc_ctr++;
+		} else if (!mystrcmpi(mnemonic, "add" )) {
+			if (!o3)
+				error("Missing operand");
+			dr = getreg(o1) << 9;                     // get and position dest reg number
+			sr1 = getreg(o2) << 6;                    // get and position srce reg number
+			if (isreg(o3)) {                          // is 3rd operand a reg?
+				sr2 = getreg(o3);                      // get third reg number
+				macword = 0x1000 | dr | sr1 | sr2;     // assemble inst
+			} else {
+				if (sscanf(o3,"%d", &num) != 1)        // convert imm5 field
+				error("Bad imm5");
+				if (num > 15 || num < -16)
+				error("imm5 out of range");
+				macword = 0x1000 | dr | sr1 | 0x0020 | (num & 0x1f);
+			}
+			fwrite(&macword, 2, 1, outfile);          // write out instruction
+			loc_ctr++;
+		} else if (!mystrcmpi(mnemonic, "ld" )) {
+			dr = getreg(o1) << 9;                     // get and position destination reg number
+			pcoffset9 = (getadd(o2) - loc_ctr - 1);
+			if (pcoffset9 > 255 || pcoffset9 < -256)
+				error("pcoffset9 out of range");
+			macword = 0x2000 | dr | (pcoffset9 & 0x1ff);// assemble inst
+			fwrite(&macword, 2, 1, outfile);          // write out instruction
+			loc_ctr++;
+		}
 
-      // code missing here for st, bl, blr, and, ldr, str, not
+		// code missing here for st, bl, blr, and, ldr, str, not
 
-      else if (!mystrcmpi(mnemonic, "jmp" )) {     // also ret instruction
-         baser = getreg(o1) << 6;                  // get reg number and position it
-         if (o2) {                                 // offset6 specified?
-            if (sscanf(o2,"%d", &num) != 1)        // convert offset6 field
-               error("Bad offset6");
-            if (num > 31 || num < -32)
-               error("offset6 out of range");
-         } else
-            num = 0;                               // offset6 defaults to 0
-         // combine opcode, reg number, and offset6
-         macword = 0xc000 | baser | num;       
-         fwrite(&macword, 2, 1, outfile);          // write out instruction
-         loc_ctr++;
-      } else if (!mystrcmpi(mnemonic, "ret" )) {   // also ret instruction
-         // code here is similar to code for jmp except baser
-         // is always 7 and optional offset6 is pointed to by
-         // o1, not by o2 as in jmp
-      }
+		else if (!mystrcmpi(mnemonic, "jmp" )) {     // also ret instruction
+			baser = getreg(o1) << 6;                  // get reg number and position it
+			if (o2) {                                 // offset6 specified?
+				if (sscanf(o2,"%d", &num) != 1)        // convert offset6 field
+					error("Bad offset6");
+				if (num > 31 || num < -32)
+					error("offset6 out of range");
+			} else
+				num = 0;                               // offset6 defaults to 0
+			// combine opcode, reg number, and offset6
+			macword = 0xc000 | baser | num;       
+			fwrite(&macword, 2, 1, outfile);          // write out instruction
+			loc_ctr++;
+		} else if (!mystrcmpi(mnemonic, "ret" )) {   // also ret instruction
+			// code here is similar to code for jmp except baser
+			// is always 7 and optional offset6 is pointed to by
+			// o1, not by o2 as in jmp
+		}
 
-      // code missing here for lea, trap (halt, nl, dout), .word
+		// code missing here for lea, trap (halt, nl, dout), .word
 
-      else if (!mystrcmpi(mnemonic, ".zero")) {
-         sscanf(o1, "%d", &num);                   // get size of block
-         loc_ctr = loc_ctr + num;                  // adjust loc_ctr
-         macword = 0;
-         while (num--)                             // write out a block of zeros
-            fwrite(&macword, 2, 1, outfile);
-      } else
-         error("Invalid mnemonic or directive");
-   }
+		else if (!mystrcmpi(mnemonic, ".zero")) {
+			sscanf(o1, "%d", &num);                   // get size of block
+			loc_ctr = loc_ctr + num;                  // adjust loc_ctr
+			macword = 0;
+			while (num--)                             // write out a block of zeros
+				fwrite(&macword, 2, 1, outfile);
+		} else
+			error("Invalid mnemonic or directive");
+	}
    // Close files.
    fclose(infile);
    fclose(outfile);
