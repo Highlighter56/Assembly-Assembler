@@ -288,9 +288,9 @@ int main(int argc,char *argv[])  // Main Method
 				macword = 0x1000 | dr | sr1 | sr2;     // assemble inst
 			} else {
 				if (sscanf(o3,"%d", &num) != 1)        // convert imm5 field
-				error("Bad imm5");
+					error("Bad imm5");
 				if (num > 15 || num < -16)
-				error("imm5 out of range");
+					error("imm5 out of range");
 				macword = 0x1000 | dr | sr1 | 0x0020 | (num & 0x1f);
 			}
 			fwrite(&macword, 2, 1, outfile);          // write out instruction
@@ -318,6 +318,26 @@ int main(int argc,char *argv[])  // Main Method
 		// blr
 		else if (!mystrcmpi(mnemonic, "blr" )) {
 			// code missing here
+		}
+
+		// and
+		// note to self, my 'and' code is a coppied from the 'add' code, but opcode 5 instead of 1
+		else if (!mystrcmpi(mnemonic, "and" )) {
+			if (!o3)
+				error("Missing operand");
+			dr = getreg(o1) << 9;                     // get and position dest reg number
+			sr1 = getreg(o2) << 6;                    // get and position srce reg number
+			if (isreg(o3)) {                          // is 3rd operand a reg?
+				sr2 = getreg(o3);                      // get third reg number
+				macword = 0x5000 | dr | sr1 | sr2;     // assemble inst
+			} else {
+				if (sscanf(o3,"%d", &num) != 1)        // convert imm5 field
+					error("Bad imm5");
+				if (num > 15 || num < -16)
+					error("imm5 out of range");
+				macword = 0x5000 | dr | sr1 | 0x0020 | (num & 0x1f);
+			}
+			fwrite(&macword, 2, 1, outfile);          // write out instruction
 		}
 
 		// ldr
@@ -382,7 +402,7 @@ int main(int argc,char *argv[])  // Main Method
 
 		// .word
 		else if (!mystrcmpi(mnemonic, ".word" )) {
-			num = num = strtol(o1,&end,10);					// converts the string o1 to a decimal nubmer : &end is where the last character read as a number is stored, so it can be used to check if it was actualy a number that was read in. Im not doing this currently, but at some point this could be implemented
+			num = strtol(o1,&end,10);					// converts the string o1 to a decimal nubmer : &end is where the last character read as a number is stored, so it can be used to check if it was actualy a number that was read in. Im not doing this currently, but at some point this could be implemented
 			if (num > 65535 || num < -65536)				// Checks if the pcoffset9 is within the valid range
 				error("pcoffset9 out of range");
 			macword = macword | num;				// assembly macword
