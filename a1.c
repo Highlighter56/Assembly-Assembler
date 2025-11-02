@@ -368,7 +368,8 @@ int main(int argc,char *argv[])  // Main Method
 		}
 		// nl
 		else if (!mystrcmpi(mnemonic, "nl" )) {
-			// code missing here
+			macword = 0xf001;							// Assign macword
+			fwrite(&macword, 2, 1, outfile);          	// write out instruction
 		}
 		// dout
 		else if (!mystrcmpi(mnemonic, "dout" )) {
