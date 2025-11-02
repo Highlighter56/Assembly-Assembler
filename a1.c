@@ -106,7 +106,7 @@ unsigned short getadd(char *p)
 		}
 		i++;                                // Incriment i
 	}
-	error("Symbol '%s' not in symbol tabel", p);   // If there is no match, call error
+	error("Symbol not in symbol table");	// If there is no match, call error
 	// Maybe change this error to 'Symbol does not exist'
 }
 
@@ -373,7 +373,10 @@ int main(int argc,char *argv[])  // Main Method
 		}
 		// dout
 		else if (!mystrcmpi(mnemonic, "dout" )) {
-			// code missing here
+			macword = 0xf000;							// Assign macword
+			sr = getreg(o1) << 9;						// get and format sr
+			macword = macword | sr;						// join macword
+			fwrite(&macword, 2, 1, outfile);          	// write out instruction
 		}
 
 		// .word
