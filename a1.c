@@ -208,12 +208,11 @@ int main(int argc,char *argv[])  // Main Method
 		if (loc_ctr > 65536)
 			error("Program too big");
 	}
-
    	rewind(infile);
+	loc_ctr = linenum = 0;                          // reinitialize - after pass 1, reset to start pass 2
 
 	// Pass 2
 	printf("Starting Pass 2\n");                    // starting pass 2
-	loc_ctr = linenum = 0;                          // reinitialize - after pass 1, reset to start pass 2
 	while (fgets(buf, sizeof(buf), infile)) {
 		linenum++;                                   // incriment line number
 		cp = buf;                                    // cp is becomes an array, with each character of a single line of code in a different index
@@ -307,7 +306,12 @@ int main(int argc,char *argv[])  // Main Method
 
 		// st
 		else if (!mystrcmpi(mnemonic, "st" )) {
-			// code missing here
+			sr = getreg(o1) << 9;                     		// get and position destination reg number
+			pcoffset9 = (getadd(o2) - loc_ctr - 1);			// **Calculates the pcoffset9**
+			if (pcoffset9 > 255 || pcoffset9 < -256)		// Checks if the pcoffset9 is within the valid range
+				error("pcoffset9 out of range");
+			macword = 0x3000 | dr | (pcoffset9 & 0x1ff);	// assemble inst
+			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
 
 		// bl
@@ -352,8 +356,6 @@ int main(int argc,char *argv[])  // Main Method
 		
 		// not
 		else if (!mystrcmpi(mnemonic, "not" )) {
-			if(!isreg(o1) && !isreg(o2)) 					// checks if valid registers
-				error("bad register");
 			dr = getreg(o1) << 9;							// get dr
 			sr1 = getreg(o2) << 6;							// get sr1
 			macword = 0x9000 | dr | sr1;					// assembly macword
