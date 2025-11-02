@@ -294,11 +294,11 @@ int main(int argc,char *argv[])  // Main Method
 			}
 			fwrite(&macword, 2, 1, outfile);          // write out instruction
 
-		// Ld
+		// ld
 		} else if (!mystrcmpi(mnemonic, "ld" )) {
-			dr = getreg(o1) << 9;                     // get and position destination reg number
-			pcoffset9 = (getadd(o2) - loc_ctr - 1);
-			if (pcoffset9 > 255 || pcoffset9 < -256)
+			dr = getreg(o1) << 9;                     	// get and position destination reg number
+			pcoffset9 = (getadd(o2) - loc_ctr - 1);		// **Calculates the pcoffset9**
+			if (pcoffset9 > 255 || pcoffset9 < -256)	// Checks if the pcoffset9 is within the valid range
 				error("pcoffset9 out of range");
 			macword = 0x2000 | dr | (pcoffset9 & 0x1ff);// assemble inst
 			fwrite(&macword, 2, 1, outfile);          // write out instruction
@@ -363,7 +363,8 @@ int main(int argc,char *argv[])  // Main Method
 		// --Trap--
 		// halt
 		else if (!mystrcmpi(mnemonic, "halt" )) {
-			// code missing here
+			macword = 0xf000;							// Assign macword
+			fwrite(&macword, 2, 1, outfile);          	// write out instruction
 		}
 		// nl
 		else if (!mystrcmpi(mnemonic, "nl" )) {
