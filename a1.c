@@ -242,7 +242,7 @@ int main(int argc,char *argv[])  // Main Method
 		if (mnemonic == NULL)
 			continue;
 		
-		// Branching
+		// --Branching--
 		if (!mystrncmpi(mnemonic, "br", 2)) {        // case sensitive compares - if br
 			if (!mystrcmpi(mnemonic, "br" ))
 				macword = 0x0e00;
@@ -304,7 +304,35 @@ int main(int argc,char *argv[])  // Main Method
 			fwrite(&macword, 2, 1, outfile);          // write out instruction
 		}
 
-		// code missing here for st, bl, blr, and, ldr, str, not
+		// st
+		else if (!mystrcmpi(mnemonic, "st" )) {
+			// code missing here
+		}
+
+		// bl
+		else if (!mystrcmpi(mnemonic, "bl" )) {
+			// code missing here
+		}
+
+		// blr
+		else if (!mystrcmpi(mnemonic, "blr" )) {
+			// code missing here
+		}
+
+		// ldr
+		else if (!mystrcmpi(mnemonic, "ldr" )) {
+			// code missing here
+		}
+
+		// str
+		else if (!mystrcmpi(mnemonic, "str" )) {
+			// code missing here
+		}
+
+		// not
+		else if (!mystrcmpi(mnemonic, "not" )) {
+			// code missing here
+		}
 
 		// jmp
 		else if (!mystrcmpi(mnemonic, "jmp" )) {     // also ret instruction
@@ -327,8 +355,29 @@ int main(int argc,char *argv[])  // Main Method
 			// o1, not by o2 as in jmp
 		}
 
-		// code missing here for lea, trap (halt, nl, dout), .word
+		// lea
+		else if (!mystrcmpi(mnemonic, "lea" )) {
+			// code missing here
+		}
 
+		// --Trap--
+		// halt
+		else if (!mystrcmpi(mnemonic, "halt" )) {
+			// code missing here
+		}
+		// nl
+		else if (!mystrcmpi(mnemonic, "nl" )) {
+			// code missing here
+		}
+		// dout
+		else if (!mystrcmpi(mnemonic, "dout" )) {
+			// code missing here
+		}
+
+		// .word
+		else if (!mystrcmpi(mnemonic, ".word" )) {
+			// code missing here
+		}
 		// .zero
 		else if (!mystrcmpi(mnemonic, ".zero")) {
 			sscanf(o1, "%d", &num);                   	// get size of block
