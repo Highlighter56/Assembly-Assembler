@@ -208,12 +208,12 @@ int main(int argc,char *argv[])  // Main Method
 			error("Program too big");
 	}
 
-   rewind(infile);
+   	rewind(infile);
 
-   // Pass 2
-   printf("Starting Pass 2\n");                    // starting pass 2
-   loc_ctr = linenum = 0;                          // reinitialize - after pass 1, reset to start pass 2
-   while (fgets(buf, sizeof(buf), infile)) {
+	// Pass 2
+	printf("Starting Pass 2\n");                    // starting pass 2
+	loc_ctr = linenum = 0;                          // reinitialize - after pass 1, reset to start pass 2
+	while (fgets(buf, sizeof(buf), infile)) {
 		linenum++;                                   // incriment line number
 		cp = buf;                                    // cp is becomes an array, with each character of a single line of code in a different index
 		while (isspace(*cp))                         // itterates past the white space
@@ -237,8 +237,12 @@ int main(int argc,char *argv[])  // Main Method
 			// printf("\t%s\t%s\t%s\t%s\n", mnemonic, o1, o2, o3);      // Debugging
 		}
 
+		// Building Lines of Assembly
+		// Blank Lines
 		if (mnemonic == NULL)
 			continue;
+		
+		// Branching
 		if (!mystrncmpi(mnemonic, "br", 2)) {        // case sensitive compares - if br
 			if (!mystrcmpi(mnemonic, "br" ))
 				macword = 0x0e00;
@@ -271,7 +275,8 @@ int main(int argc,char *argv[])  // Main Method
 				error("pcoffset9 out of range");
 			macword = macword | (pcoffset9 & 0x01ff);  // assemble inst
 			fwrite(&macword, 2, 1, outfile);           // write instruction
-			loc_ctr++;
+
+		// Add
 		} else if (!mystrcmpi(mnemonic, "add" )) {
 			if (!o3)
 				error("Missing operand");
@@ -288,7 +293,8 @@ int main(int argc,char *argv[])  // Main Method
 				macword = 0x1000 | dr | sr1 | 0x0020 | (num & 0x1f);
 			}
 			fwrite(&macword, 2, 1, outfile);          // write out instruction
-			loc_ctr++;
+
+		// Ld
 		} else if (!mystrcmpi(mnemonic, "ld" )) {
 			dr = getreg(o1) << 9;                     // get and position destination reg number
 			pcoffset9 = (getadd(o2) - loc_ctr - 1);
@@ -296,11 +302,11 @@ int main(int argc,char *argv[])  // Main Method
 				error("pcoffset9 out of range");
 			macword = 0x2000 | dr | (pcoffset9 & 0x1ff);// assemble inst
 			fwrite(&macword, 2, 1, outfile);          // write out instruction
-			loc_ctr++;
 		}
 
 		// code missing here for st, bl, blr, and, ldr, str, not
 
+		// jmp
 		else if (!mystrcmpi(mnemonic, "jmp" )) {     // also ret instruction
 			baser = getreg(o1) << 6;                  // get reg number and position it
 			if (o2) {                                 // offset6 specified?
@@ -313,7 +319,8 @@ int main(int argc,char *argv[])  // Main Method
 			// combine opcode, reg number, and offset6
 			macword = 0xc000 | baser | num;       
 			fwrite(&macword, 2, 1, outfile);          // write out instruction
-			loc_ctr++;
+		
+		// ret
 		} else if (!mystrcmpi(mnemonic, "ret" )) {   // also ret instruction
 			// code here is similar to code for jmp except baser
 			// is always 7 and optional offset6 is pointed to by
@@ -322,14 +329,19 @@ int main(int argc,char *argv[])  // Main Method
 
 		// code missing here for lea, trap (halt, nl, dout), .word
 
+		// .zero
 		else if (!mystrcmpi(mnemonic, ".zero")) {
-			sscanf(o1, "%d", &num);                   // get size of block
-			loc_ctr = loc_ctr + num;                  // adjust loc_ctr
+			sscanf(o1, "%d", &num);                   	// get size of block
+			loc_ctr = loc_ctr + num;                  	// adjust loc_ctr 
 			macword = 0;
-			while (num--)                             // write out a block of zeros
+			while (num--)                             	// write out a block of zeros
 				fwrite(&macword, 2, 1, outfile);
+			loc_ctr--;									// This is to account for loc_ctr++ at the end of the main while loop
 		} else
 			error("Invalid mnemonic or directive");
+
+		// Increment the current line number : Instead of doing this individualy for most mnemonics, Ill do it once here, then subtract 1 anytime its not supposed to be incrimented
+		loc_ctr++;
 	}
    // Close files.
    fclose(infile);
