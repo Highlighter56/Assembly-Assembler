@@ -100,15 +100,12 @@ unsigned short getreg(char *p)
 unsigned short getadd(char *p)
 {
 	// Returns address of symbol p points to accessed from the symbol table. Calls error() if symbol not in symbol table.
-	int i=0;                         // Note: Could this break if a label was '0'
-	while(symbol[i]!=0) {                  // loop the symbol table until you reach the end of inputed symbols. (The null value for a char pointer is 0)
-		if(strcmp(symbol[i],p)==0) {        // If theres a match
-			return symadd[i];                // Returning the adress of the symbol p
+	for(int i=0; i<stsize; i++) {			// stsize is the known size of the table, so loop for just that size
+		if(strcmp(symbol[i],p)==0) {		// if symbol and p are the same
+			return symadd[i];				// return adress of symbol
 		}
-		i++;                                // Incriment i
 	}
 	error("Symbol not in symbol table");	// If there is no match, call error
-	// Maybe change this error to 'Symbol does not exist'
 }
 
 
@@ -184,7 +181,7 @@ int main(int argc,char *argv[])  // Main Method
 				error("Duplicate label");           // There is a duplicate label, and call error
 				i++;                                   // Incriment i
 			}
-			symbol[stsize] = label;                   // stsize is a bad name, but its an int that keeps in index inside of symbol and symadd, to make sure were alwasu at the same place
+			symbol[stsize] = strdup(label);                   // stsize is a bad name, but its an int that keeps in index inside of symbol and symadd, to make sure were alwasu at the same place
 			symadd[stsize++] = loc_ctr;               // adding the label and its adress to symbol and symadd
 			mnemonic = strtok(NULL," \r\n\t:");       // get ptr to mnemonic/directive - if on subsequent calls you done enter a string and instead enter null as the string to tokenize, strtok will remember the last string you called on, and contiue to tokenize from where it last left off
 			o1 = strtok(NULL, " \r\n\t,");            // get ptr to first operand
@@ -310,7 +307,7 @@ int main(int argc,char *argv[])  // Main Method
 			pcoffset9 = (getadd(o2) - loc_ctr - 1);			// **Calculates the pcoffset9**
 			if (pcoffset9 > 255 || pcoffset9 < -256)		// Checks if the pcoffset9 is within the valid range
 				error("pcoffset9 out of range");
-			macword = 0x3000 | dr | (pcoffset9 & 0x1ff);	// assemble inst
+			macword = 0x3000 | sr | (pcoffset9 & 0x1ff);	// assemble inst
 			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
 
