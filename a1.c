@@ -315,7 +315,7 @@ int main(int argc,char *argv[])  // Main Method
 		else if (!mystrcmpi(mnemonic, "bl") || !mystrcmpi(mnemonic, "call") || !mystrcmpi(mnemonic, "jsr")) {
 			sscanf(o1, "%d", &num);							// convert string to num
 			if(num > 511 || num < 512) 						// if num out of range
-				error("offset6 out of range");
+				error("offset11 out of range");
 			pcoffset11 = (num & 0x7ff);						// get pcoffset11
 			macword = 0x4800 | pcoffset11;					// assembly macword
 			fwrite(&macword, 2, 1, outfile);          		// write out instruction
@@ -323,9 +323,15 @@ int main(int argc,char *argv[])  // Main Method
 
 		// blr
 		else if (!mystrcmpi(mnemonic, "blr" )) {
-			// code missing here
+			baser = getreg(o1) << 6;
+			sscanf(o2, "%d", &num);							// convert string to num
+			if(num > 511 || num < 512) 						// if num out of range
+				error("offset6 out of range");
+			offset6 = (num & 0x1f);						// get pcoffset11
+			macword = 0x4000 | baser | offset6;					// assembly macword
+			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
-
+		
 		// and
 		// note to self, my 'and' code is a coppied from the 'add' code, but opcode 5 instead of 1
 		else if (!mystrcmpi(mnemonic, "and" )) {
@@ -404,7 +410,7 @@ int main(int argc,char *argv[])  // Main Method
 			dr = getreg(o1) << 9;
 			sscanf(o2, "%d", &num);							// convert string to num
 			if(num > 255 || num < -256) 					// if num out of range
-				error("offset out of range");
+				error("pcoffset9 out of range");
 			pcoffset9 = (num & 0x1ff);						// get pcoffset9
 			macword = 0xe000 | dr | pcoffset9;				// assembly macword
 			fwrite(&macword, 2, 1, outfile);          		// write out instruction
@@ -433,7 +439,7 @@ int main(int argc,char *argv[])  // Main Method
 		else if (!mystrcmpi(mnemonic, ".word" )) {
 			num = strtol(o1,&end,10);						// converts the string o1 to a decimal nubmer : &end is where the last character read as a number is stored, so it can be used to check if it was actualy a number that was read in. Im not doing this currently, but at some point this could be implemented
 			if (num > 65535 || num < -65536)				// Checks if the pcoffset9 is within the valid range
-				error("pcoffset9 out of range");
+				error("out of range");
 			macword = macword | num;						// assembly macword
 			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
