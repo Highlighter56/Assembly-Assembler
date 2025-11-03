@@ -361,7 +361,7 @@ int main(int argc,char *argv[])  // Main Method
 			if(num > 63 || num < -64) 						// if num out of range
 				error("offset6 out of range");
 			offset6 = (num & 0x3f);							// get offset6
-			macword = 0x6000 | sr | baser | offset6;		// assembly macword
+			macword = 0x7000 | sr | baser | offset6;		// assembly macword
 			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
 		
@@ -396,7 +396,13 @@ int main(int argc,char *argv[])  // Main Method
 
 		// lea
 		else if (!mystrcmpi(mnemonic, "lea" )) {
-			// code missing here
+			dr = getreg(o1) << 9;
+			sscanf(o1, "%d", &num);							// convert string to num
+			if(num > 255 || num < -256) 					// if num out of range
+				error("offset out of range");
+			pcoffset9 = (num & 0x1ff);						// get pcoffset9
+			macword = 0xe000 | dr | pcoffset9;				// assembly macword
+			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
 
 		// --Trap--
