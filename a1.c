@@ -314,10 +314,10 @@ int main(int argc,char *argv[])  // Main Method
 		// bl
 		else if (!mystrcmpi(mnemonic, "bl") || !mystrcmpi(mnemonic, "call") || !mystrcmpi(mnemonic, "jsr")) {
 			sscanf(o1, "%d", &num);							// convert string to num
-			if(num > 511 || num < 512) 						// if num out of range
+			pcoffset11 = (getadd(o1) - loc_ctr - 1);
+			if(pcoffset11 > 511 || pcoffset11 < 512) 						// if num out of range
 				error("offset11 out of range");
-			pcoffset11 = (num & 0x7ff);						// get pcoffset11
-			macword = 0x4800 | pcoffset11;					// assembly macword
+			macword = 0x4800 | (pcoffset11 & 0x7ff);					// assembly macword
 			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
 
@@ -357,7 +357,7 @@ int main(int argc,char *argv[])  // Main Method
 			dr = getreg(o1) << 9;							// get dr
 			baser = getreg(o2) << 6;						// get baser
 			sscanf(o3, "%d", &num);							// convert string to num
-			if(num > 63 || num < -64) 						// if num out of range
+			if(num > 31 || num < -32) 						// if num out of range
 				error("offset6 out of range");
 			offset6 = (num & 0x3f);							// get offset6
 			macword = 0x6000 | dr | baser | offset6;		// assembly macword
@@ -369,7 +369,7 @@ int main(int argc,char *argv[])  // Main Method
 			sr = getreg(o1) << 9;							// get sr
 			baser = getreg(o2) << 6;						// get baser
 			sscanf(o3, "%d", &num);							// convert string to num
-			if(num > 63 || num < -64) 						// if num out of range
+			if(num > 31 || num < -32) 						// if num out of range
 				error("offset6 out of range");
 			offset6 = (num & 0x3f);							// get offset6
 			macword = 0x7000 | sr | baser | offset6;		// assembly macword
@@ -400,19 +400,21 @@ int main(int argc,char *argv[])  // Main Method
 		
 		// ret
 		} else if (!mystrcmpi(mnemonic, "ret" )) {   		// also ret instruction
-			// code missing here is similar to code for jmp except baser
-			// is always 7 and optional offset6 is pointed to by
-			// o1, not by o2 as in jmp
+			sscanf(o1, "%d", &num);							// convert string to num
+			if(num > 31 || num < -32) 						// if num out of range
+				error("offset6 out of range");
+			offset6 = (num & 0x3f);							// get offset6
+			macword = 0xc000 | offset6;						// assembly macword
+			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
 
 		// lea
 		else if (!mystrcmpi(mnemonic, "lea" )) {
 			dr = getreg(o1) << 9;
-			sscanf(o2, "%d", &num);							// convert string to num
-			if(num > 255 || num < -256) 					// if num out of range
+			pcoffset9 = (getadd(o2) - loc_ctr - 1);
+			if(pcoffset9 > 255 || pcoffset9 < -256) 		// if num out of range
 				error("pcoffset9 out of range");
-			pcoffset9 = (num & 0x1ff);						// get pcoffset9
-			macword = 0xe000 | dr | pcoffset9;				// assembly macword
+			macword = 0xe000 | dr | (pcoffset9 & 0x1ff);	// assembly macword
 			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
 
