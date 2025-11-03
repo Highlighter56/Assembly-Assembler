@@ -312,8 +312,13 @@ int main(int argc,char *argv[])  // Main Method
 		}
 
 		// bl
-		else if (!mystrcmpi(mnemonic, "bl" )) {
-			// code missing here
+		else if (!mystrcmpi(mnemonic, "bl") || !mystrcmpi(mnemonic, "call") || !mystrcmpi(mnemonic, "jsr")) {
+			sscanf(o1, "%d", &num);							// convert string to num
+			if(num > 511 || num < 512) 						// if num out of range
+				error("offset6 out of range");
+			pcoffset11 = (num & 0x7ff);						// get pcoffset11
+			macword = 0x4800 | pcoffset11;					// assembly macword
+			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
 
 		// blr
@@ -345,7 +350,7 @@ int main(int argc,char *argv[])  // Main Method
 		else if (!mystrcmpi(mnemonic, "ldr" )) {
 			dr = getreg(o1) << 9;							// get dr
 			baser = getreg(o2) << 6;						// get baser
-			sscanf(o1, "%d", &num);							// convert string to num
+			sscanf(o3, "%d", &num);							// convert string to num
 			if(num > 63 || num < -64) 						// if num out of range
 				error("offset6 out of range");
 			offset6 = (num & 0x3f);							// get offset6
@@ -357,7 +362,7 @@ int main(int argc,char *argv[])  // Main Method
 		else if (!mystrcmpi(mnemonic, "str" )) {
 			sr = getreg(o1) << 9;							// get sr
 			baser = getreg(o2) << 6;						// get baser
-			sscanf(o1, "%d", &num);							// convert string to num
+			sscanf(o3, "%d", &num);							// convert string to num
 			if(num > 63 || num < -64) 						// if num out of range
 				error("offset6 out of range");
 			offset6 = (num & 0x3f);							// get offset6
@@ -389,7 +394,7 @@ int main(int argc,char *argv[])  // Main Method
 		
 		// ret
 		} else if (!mystrcmpi(mnemonic, "ret" )) {   		// also ret instruction
-			// code here is similar to code for jmp except baser
+			// code missing here is similar to code for jmp except baser
 			// is always 7 and optional offset6 is pointed to by
 			// o1, not by o2 as in jmp
 		}
@@ -397,7 +402,7 @@ int main(int argc,char *argv[])  // Main Method
 		// lea
 		else if (!mystrcmpi(mnemonic, "lea" )) {
 			dr = getreg(o1) << 9;
-			sscanf(o1, "%d", &num);							// convert string to num
+			sscanf(o2, "%d", &num);							// convert string to num
 			if(num > 255 || num < -256) 					// if num out of range
 				error("offset out of range");
 			pcoffset9 = (num & 0x1ff);						// get pcoffset9
