@@ -355,7 +355,14 @@ int main(int argc,char *argv[])  // Main Method
 
 		// str
 		else if (!mystrcmpi(mnemonic, "str" )) {
-			// code missing here
+			sr = getreg(o1) << 9;							// get sr
+			baser = getreg(o2) << 6;						// get baser
+			sscanf(o1, "%d", &num);							// convert string to num
+			if(num > 63 || num < -64) 						// if num out of range
+				error("offset6 out of range");
+			offset6 = (num & 0x3f);							// get offset6
+			macword = 0x6000 | sr | baser | offset6;		// assembly macword
+			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
 		
 		// not
