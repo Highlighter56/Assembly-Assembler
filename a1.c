@@ -176,7 +176,7 @@ int main(int argc,char *argv[])  // Main Method
 			label = strdup(strtok(buf, " \r\n\t:"));  // get the label - strtok breaks a string based on the entered string - so this is breaking up buf, by searching for the first occurence of  \r\n\t:
 			// Check for duplicate labels
 			int i=0;
-			while(symbol[i]!=0) {                     // loop the symbol table until you reach the end of inputed symbols. (The null value for a char pointer is 0)
+			while(i<stsize) {                     // loop the symbol table until you reach the end of inputed symbols. (The null value for a char pointer is 0)
 				if(strcmp(symbol[i],label)==0)         // If theres a match
 				error("Duplicate label");           // There is a duplicate label, and call error
 				i++;                                   // Incriment i
@@ -211,6 +211,7 @@ int main(int argc,char *argv[])  // Main Method
 	// Pass 2
 	printf("Starting Pass 2\n");                    // starting pass 2
 	while (fgets(buf, sizeof(buf), infile)) {
+		macword = 0x0000;
 		linenum++;                                   // incriment line number
 		cp = buf;                                    // cp is becomes an array, with each character of a single line of code in a different index
 		while (isspace(*cp))                         // itterates past the white space
@@ -315,7 +316,7 @@ int main(int argc,char *argv[])  // Main Method
 		else if (!mystrcmpi(mnemonic, "bl") || !mystrcmpi(mnemonic, "call") || !mystrcmpi(mnemonic, "jsr")) {
 			sscanf(o1, "%d", &num);							// convert string to num
 			pcoffset11 = (getadd(o1) - loc_ctr - 1);
-			if(pcoffset11 > 511 || pcoffset11 < 512) 						// if num out of range
+			if(pcoffset11 > 511 || pcoffset11 < -512) 						// if num out of range
 				error("offset11 out of range");
 			macword = 0x4800 | (pcoffset11 & 0x7ff);					// assembly macword
 			fwrite(&macword, 2, 1, outfile);          		// write out instruction
@@ -325,13 +326,13 @@ int main(int argc,char *argv[])  // Main Method
 		else if (!mystrcmpi(mnemonic, "blr" )) {
 			baser = getreg(o1) << 6;
 			sscanf(o2, "%d", &num);							// convert string to num
-			if(num > 511 || num < 512) 						// if num out of range
+			if(num > 31 || num < -32) 						// if num out of range
 				error("offset6 out of range");
-			offset6 = (num & 0x1f);						// get pcoffset11
-			macword = 0x4000 | baser | offset6;					// assembly macword
+			offset6 = (num & 0x3f);						
+			macword = 0x4000 | baser | offset6;				// assembly macword
 			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
-		
+
 		// and
 		// note to self, my 'and' code is a coppied from the 'add' code, but opcode 5 instead of 1
 		else if (!mystrcmpi(mnemonic, "and" )) {
@@ -395,16 +396,12 @@ int main(int argc,char *argv[])  // Main Method
 			} else
 				num = 0;                               		// offset6 defaults to 0
 			// combine opcode, reg number, and offset6
-			macword = 0xc000 | baser | num;       
+			macword = 0xc000 | baser | (num & 0x3f);       
 			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		
 		// ret
-		} else if (!mystrcmpi(mnemonic, "ret" )) {   		// also ret instruction
-			sscanf(o1, "%d", &num);							// convert string to num
-			if(num > 31 || num < -32) 						// if num out of range
-				error("offset6 out of range");
-			offset6 = (num & 0x3f);							// get offset6
-			macword = 0xc000 | offset6;						// assembly macword
+		} else if (!mystrcmpi(mnemonic, "ret" )) {   		
+			macword = 0xc1c0;								// assembly macword
 			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
 
@@ -431,7 +428,7 @@ int main(int argc,char *argv[])  // Main Method
 		}
 		// dout
 		else if (!mystrcmpi(mnemonic, "dout" )) {
-			macword = 0xf000;								// Assign macword
+			macword = 0xf002;								// Assign macword
 			sr = getreg(o1) << 9;							// get and format sr
 			macword = macword | sr;							// join macword
 			fwrite(&macword, 2, 1, outfile);          		// write out instruction
@@ -440,22 +437,24 @@ int main(int argc,char *argv[])  // Main Method
 		// .word
 		else if (!mystrcmpi(mnemonic, ".word" )) {
 			num = strtol(o1,&end,10);						// converts the string o1 to a decimal nubmer : &end is where the last character read as a number is stored, so it can be used to check if it was actualy a number that was read in. Im not doing this currently, but at some point this could be implemented
-			if (num > 65535 || num < -65536)				// Checks if the pcoffset9 is within the valid range
+			if (num > 32767 || num < -32768)						// Checks if the pcoffset9 is within the valid range
 				error("out of range");
-			macword = macword | num;						// assembly macword
+			macword = (unsigned short) num;						// assembly macword
 			fwrite(&macword, 2, 1, outfile);          		// write out instruction
 		}
 		// .zero
 		else if (!mystrcmpi(mnemonic, ".zero")) {
 			sscanf(o1, "%d", &num);                   		// get size of block
-			loc_ctr = loc_ctr + num;                  		// adjust loc_ctr 
+			loc_ctr = loc_ctr + num;                  	// adjust loc_ctr
 			macword = 0;
 			while (num--)                             		// write out a block of zeros
 				fwrite(&macword, 2, 1, outfile);
-			loc_ctr--;										// This is to account for loc_ctr++ at the end of the main while loop
-		} else
-			error("Invalid mnemonic or directive");
-
+			continue;										// to prevent the incrimentation of loc_ctr
+		} 
+		else
+		error("Invalid mnemonic or directive");
+		// Debugging
+		// printf("   mcword: %x\n",macword);
 		// Increment the current line number : Instead of doing this individualy for most mnemonics, Ill do it once here, then subtract 1 anytime its not supposed to be incrimented
 		loc_ctr++;
 	}
